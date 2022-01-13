@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 
 public class SwerveModule {
+  // TODO: These constants need to be defined per robot.
   private static final double kWheelRadius = 0.0508;
   private static final int kEncoderResolution = 4096;
 
@@ -29,9 +30,11 @@ public class SwerveModule {
   private final Encoder m_turningEncoder;
 
   // Gains are for example purposes only - must be determined for your own robot!
+  // TODO: Need to tune the PID controller here, a P of 1 is usually quite high.
   private final PIDController m_drivePIDController = new PIDController(1, 0, 0);
 
   // Gains are for example purposes only - must be determined for your own robot!
+  // TODO: Need to tune the PID controller here, a P of 1 is usually quite high.
   private final ProfiledPIDController m_turningPIDController =
       new ProfiledPIDController(
           1,
@@ -41,6 +44,7 @@ public class SwerveModule {
               kModuleMaxAngularVelocity, kModuleMaxAngularAcceleration));
 
   // Gains are for example purposes only - must be determined for your own robot!
+  // TODO: Also will need tuning
   private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(1, 3);
   private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(1, 0.5);
 
@@ -61,9 +65,11 @@ public class SwerveModule {
       int driveEncoderChannelB,
       int turningEncoderChannelA,
       int turningEncoderChannelB) {
+    // TODO: The controllers won't be SparkMax, this needs to change.
     m_driveMotor = new PWMSparkMax(driveMotorChannel);
     m_turningMotor = new PWMSparkMax(turningMotorChannel);
 
+    // TODO: Much like the motor controllers the Encoders are going to have to change
     m_driveEncoder = new Encoder(driveEncoderChannelA, driveEncoderChannelB);
     m_turningEncoder = new Encoder(turningEncoderChannelA, turningEncoderChannelB);
 
