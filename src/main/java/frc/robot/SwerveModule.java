@@ -125,6 +125,7 @@ public class SwerveModule {
         m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
 
     m_driveMotor.set(TalonFXControlMode.PercentOutput, driveOutput + driveFeedforward);
+    
     m_turningMotor.set(TalonFXControlMode.PercentOutput, turnOutput + turnFeedforward);
   }
 }
