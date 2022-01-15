@@ -15,13 +15,16 @@ import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.motorcontrol.Talon;
 
+import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 public class SwerveModule {
   // TODO: These constants need to be defined per robot.
-  private static final double kWheelRadius = 0.0508;
-  private static final int kEncoderResolution = 4096;
+  private static final double kWheelRadius = 0.0508; // meters
+  private static final double kDriveGearRatio = 7.131;
+  private static final double kEffectiveRadius = kWheelRadius * kDriveGearRatio;
+  private static final int kEncoderResolution =  4096;
 
   private static final double kModuleMaxAngularVelocity = Drivetrain.kMaxAngularSpeed;
   private static final double kModuleMaxAngularAcceleration =
@@ -72,6 +75,7 @@ public class SwerveModule {
     // TODO: The controllers won't be SparkMax, this needs to change.
     m_driveMotor = new TalonFX(driveMotorChannel);
     m_turningMotor = new TalonFX(turningMotorChannel);
+    m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Absolute, 0, 10);
 
     // TODO: Much like the motor controllers the Encoders are going to have to change
     m_driveEncoder = new Encoder(driveEncoderChannelA, driveEncoderChannelB);
@@ -80,7 +84,7 @@ public class SwerveModule {
     // Set the distance per pulse for the drive encoder. We can simply use the
     // distance traveled for one rotation of the wheel divided by the encoder
     // resolution.
-    m_driveEncoder.setDistancePerPulse(2 * Math.PI * kWheelRadius / kEncoderResolution);
+    m_driveEncoder.setDistancePerPulse(2 * Math.PI * kEffectiveRadius / kEncoderResolution);
 
     // Set the distance (in this case, angle) per pulse for the turning encoder.
     // This is the the angle through an entire rotation (2 * pi) divided by the
@@ -125,7 +129,7 @@ public class SwerveModule {
         m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
 
     m_driveMotor.set(TalonFXControlMode.PercentOutput, driveOutput + driveFeedforward);
-    
+
     m_turningMotor.set(TalonFXControlMode.PercentOutput, turnOutput + turnFeedforward);
   }
 }

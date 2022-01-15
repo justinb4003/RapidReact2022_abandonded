@@ -13,7 +13,7 @@ import edu.wpi.first.wpilibj.AnalogGyro;
 /** Represents a swerve drive style drivetrain. */
 public class Drivetrain {
   // TODO: Robot constants will need to be tuned
-  public static final double kMaxSpeed = 3.0; // 3 meters per second
+  public static final double kMaxSpeed = 4.758; // meters per second
   public static final double kMaxAngularSpeed = Math.PI; // 1/2 rotation per second
 
   // TODO: Location of wheels from center of robot need to be defined
