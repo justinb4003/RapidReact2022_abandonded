@@ -13,6 +13,10 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+import edu.wpi.first.wpilibj.motorcontrol.Talon;
+
+import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
+import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 public class SwerveModule {
   // TODO: These constants need to be defined per robot.
@@ -23,8 +27,8 @@ public class SwerveModule {
   private static final double kModuleMaxAngularAcceleration =
       2 * Math.PI; // radians per second squared
 
-  private final MotorController m_driveMotor;
-  private final MotorController m_turningMotor;
+  private final TalonFX m_driveMotor;
+  private final TalonFX m_turningMotor;
 
   private final Encoder m_driveEncoder;
   private final Encoder m_turningEncoder;
@@ -66,8 +70,8 @@ public class SwerveModule {
       int turningEncoderChannelA,
       int turningEncoderChannelB) {
     // TODO: The controllers won't be SparkMax, this needs to change.
-    m_driveMotor = new PWMSparkMax(driveMotorChannel);
-    m_turningMotor = new PWMSparkMax(turningMotorChannel);
+    m_driveMotor = new TalonFX(driveMotorChannel);
+    m_turningMotor = new TalonFX(turningMotorChannel);
 
     // TODO: Much like the motor controllers the Encoders are going to have to change
     m_driveEncoder = new Encoder(driveEncoderChannelA, driveEncoderChannelB);
@@ -120,7 +124,7 @@ public class SwerveModule {
     final double turnFeedforward =
         m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
 
-    m_driveMotor.setVoltage(driveOutput + driveFeedforward);
-    m_turningMotor.setVoltage(turnOutput + turnFeedforward);
+    m_driveMotor.set(TalonFXControlMode.PercentOutput, driveOutput + driveFeedforward);
+    m_turningMotor.set(TalonFXControlMode.PercentOutput, turnOutput + turnFeedforward);
   }
 }
