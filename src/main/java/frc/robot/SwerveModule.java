@@ -34,8 +34,8 @@ public class SwerveModule {
   private final TalonFX m_driveMotor;
   private final TalonFX m_turningMotor;
 
-  private final Encoder m_driveEncoder;
-  private final Encoder m_turningEncoder;
+  //private final Encoder m_driveEncoder;
+  //private final Encoder m_turningEncoder;
 
   // Gains are for example purposes only - must be determined for your own robot!
   // TODO: Need to tune the PID controller here, a P of 1 is usually quite high.
@@ -66,31 +66,24 @@ public class SwerveModule {
    * @param turningEncoderChannelA DIO input for the turning encoder channel A
    * @param turningEncoderChannelB DIO input for the turning encoder channel B
    */
-  public SwerveModule(
-      int driveMotorChannel,
-      int turningMotorChannel,
-      int driveEncoderChannelA,
-      int driveEncoderChannelB,
-      int turningEncoderChannelA,
-      int turningEncoderChannelB) {
+  public SwerveModule(int driveMotorID, int turningMotorID) {
     // TODO: The controllers won't be SparkMax, this needs to change.
-    m_driveMotor = new TalonFX(driveMotorChannel);
-    m_turningMotor = new TalonFX(turningMotorChannel);
-    m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Absolute, 0, 10);
-
+    m_driveMotor = new TalonFX(driveMotorID);
+    m_turningMotor = new TalonFX(turningMotorID);
+    
     // TODO: Much like the motor controllers the Encoders are going to have to change
-    m_driveEncoder = new Encoder(driveEncoderChannelA, driveEncoderChannelB);
-    m_turningEncoder = new Encoder(turningEncoderChannelA, turningEncoderChannelB);
+    //m_driveEncoder = new Encoder(driveEncoderChannelA, driveEncoderChannelB);
+    //m_turningEncoder = new Encoder(turningEncoderChannelA, turningEncoderChannelB);
 
     // Set the distance per pulse for the drive encoder. We can simply use the
     // distance traveled for one rotation of the wheel divided by the encoder
     // resolution.
-    m_driveEncoder.setDistancePerPulse(2 * Math.PI * kEffectiveRadius / kEncoderResolution);
+    //m_driveEncoder.setDistancePerPulse(2 * Math.PI * kEffectiveRadius / kEncoderResolution);
 
     // Set the distance (in this case, angle) per pulse for the turning encoder.
     // This is the the angle through an entire rotation (2 * pi) divided by the
     // encoder resolution.
-    m_turningEncoder.setDistancePerPulse(2 * Math.PI / kEncoderResolution);
+    //m_turningEncoder.setDistancePerPulse(2 * Math.PI / kEncoderResolution);
 
     // Limit the PID Controller's input range between -pi and pi and set the input
     // to be continuous.
@@ -103,7 +96,8 @@ public class SwerveModule {
    * @return The current state of the module.
    */
   public SwerveModuleState getState() {
-    return new SwerveModuleState(m_driveEncoder.getRate(), new Rotation2d(m_turningEncoder.get()));
+    return new SwerveModuleState(m_driveMotor.getSelectedSensorVelocity(), 
+    new Rotation2d(m_turningMotor.getSelectedSensorPosition()));
   }
 
   /**
@@ -114,23 +108,23 @@ public class SwerveModule {
   public void setDesiredState(SwerveModuleState desiredState) {
     // Optimize the reference state to avoid spinning further than 90 degrees
     SwerveModuleState state =
-        SwerveModuleState.optimize(desiredState, new Rotation2d(m_turningEncoder.get()));
+        SwerveModuleState.optimize(desiredState, new Rotation2d(m_turningMotor.getSelectedSensorPosition()));
 
     // Calculate the drive output from the drive PID controller.
     final double driveOutput =
-        m_drivePIDController.calculate(m_driveEncoder.getRate(), state.speedMetersPerSecond);
+        m_drivePIDController.calculate(m_driveMotor.getSelectedSensorVelocity(), state.speedMetersPerSecond);
 
-    final double driveFeedforward = m_driveFeedforward.calculate(state.speedMetersPerSecond);
+    //final double driveFeedforward = m_driveFeedforward.calculate(state.speedMetersPerSecond);
 
     // Calculate the turning motor output from the turning PID controller.
     final double turnOutput =
-        m_turningPIDController.calculate(m_turningEncoder.get(), state.angle.getRadians()); 
+        m_turningPIDController.calculate(m_turningMotor.getSelectedSensorPosition(), state.angle.getRadians()); 
 
-    final double turnFeedforward =
-        m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
+    //final double turnFeedforward =
+    //    m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
 
-    m_driveMotor.set(TalonFXControlMode.PercentOutput, driveOutput + driveFeedforward);
+    m_driveMotor.set(TalonFXControlMode.Velocity, driveOutput);
 
-    m_turningMotor.set(TalonFXControlMode.PercentOutput, turnOutput + turnFeedforward);
+    m_turningMotor.set(TalonFXControlMode.Position, turnOutput);
   }
 }

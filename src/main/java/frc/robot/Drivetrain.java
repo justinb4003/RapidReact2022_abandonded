@@ -24,10 +24,10 @@ public class Drivetrain {
 
   // TOD: CAN Bus IDs need to be defined to match physical robot
   // ... and be placed in a nice central location like 'RobotMap'
-  private final SwerveModule m_frontLeft = new SwerveModule(1, 2, 0, 1, 2, 3);
-  private final SwerveModule m_frontRight = new SwerveModule(3, 4, 4, 5, 6, 7);
-  private final SwerveModule m_backLeft = new SwerveModule(5, 6, 8, 9, 10, 11);
-  private final SwerveModule m_backRight = new SwerveModule(7, 8, 12, 13, 14, 15);
+  private final SwerveModule m_frontLeft = new SwerveModule(10, 20);
+  private final SwerveModule m_frontRight = new SwerveModule(11, 21);
+  private final SwerveModule m_backLeft = new SwerveModule(12, 22);
+  private final SwerveModule m_backRight = new SwerveModule(13, 23);
 
   // TODO: Will need to replace the gyro here with the navX system
   private final AnalogGyro m_gyro = new AnalogGyro(0);
