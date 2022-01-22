@@ -17,15 +17,18 @@ import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.motorcontrol.Talon;
 
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
+import com.ctre.phoenix.motorcontrol.TalonFXInvertType;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 public class SwerveModule {
   // TODO: These constants need to be defined per robot.
-  private static final double kWheelRadius = 0.0508; // meters
+  private static final double kWheelRadius = 2; // inches
   private static final double kDriveGearRatio = 7.131;
-  private static final double kEffectiveRadius = kWheelRadius * kDriveGearRatio;
-  private static final int kEncoderResolution =  4096;
+  private static final double kEffectiveRadius = kWheelRadius / kDriveGearRatio;
+  private static final int kDriveResolution =  2048;
+  private static final int kTurnResolution = 31185;
 
   private static final double kModuleMaxAngularVelocity = Drivetrain.kMaxAngularSpeed;
   private static final double kModuleMaxAngularAcceleration =
@@ -53,24 +56,37 @@ public class SwerveModule {
 
   // Gains are for example purposes only - must be determined for your own robot!
   // TODO: Also will need tuning
-  private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(1, 3);
-  private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(1, 0.5);
+  //private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(1, 3);
+  //private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(1, 0.5);
 
   /**
    * Constructs a SwerveModule with a drive motor, turning motor, drive encoder and turning encoder.
    *
-   * @param driveMotorChannel PWM output for the drive motor.
-   * @param turningMotorChannel PWM output for the turning motor.
-   * @param driveEncoderChannelA DIO input for the drive encoder channel A
-   * @param driveEncoderChannelB DIO input for the drive encoder channel B
-   * @param turningEncoderChannelA DIO input for the turning encoder channel A
-   * @param turningEncoderChannelB DIO input for the turning encoder channel B
+   * @param driveMotorChannel CAN ID for the drive motor.
+   * @param turningMotorChannel CAN ID for the turning motor.
+   * 
    */
-  public SwerveModule(int driveMotorID, int turningMotorID) {
+
+   boolean driveDisabled = false;
+   String name;
+   public SwerveModule(int driveMotorID, int turningMotorID, String name, boolean driveDisabled) {
+     this(driveMotorID, turningMotorID, name);
+     this.driveDisabled = driveDisabled;
+   }
+  public SwerveModule(int driveMotorID, int turningMotorID, String name) {
     // TODO: The controllers won't be SparkMax, this needs to change.
     m_driveMotor = new TalonFX(driveMotorID);
     m_turningMotor = new TalonFX(turningMotorID);
+
+    m_driveMotor.setNeutralMode(NeutralMode.Coast);
+
+    m_driveMotor.config_kF(0, 0.0465);
+    m_driveMotor.config_kP(0, 0.0);
+    m_turningMotor.config_kP(0, 0.1);
+    m_turningMotor.config_kD(0, 0.002);
+    m_turningMotor.setInverted(TalonFXInvertType.Clockwise);
     
+    this.name = name;
     // TODO: Much like the motor controllers the Encoders are going to have to change
     //m_driveEncoder = new Encoder(driveEncoderChannelA, driveEncoderChannelB);
     //m_turningEncoder = new Encoder(turningEncoderChannelA, turningEncoderChannelB);
@@ -107,24 +123,37 @@ public class SwerveModule {
    */
   public void setDesiredState(SwerveModuleState desiredState) {
     // Optimize the reference state to avoid spinning further than 90 degrees
+    double currentTurnPosition = m_turningMotor.getSelectedSensorPosition();
+    double turnAngle = 2*Math.PI/kTurnResolution * currentTurnPosition;
     SwerveModuleState state =
-        SwerveModuleState.optimize(desiredState, new Rotation2d(m_turningMotor.getSelectedSensorPosition()));
+        SwerveModuleState.optimize(desiredState, new Rotation2d(turnAngle));
 
     // Calculate the drive output from the drive PID controller.
-    final double driveOutput =
-        m_drivePIDController.calculate(m_driveMotor.getSelectedSensorVelocity(), state.speedMetersPerSecond);
+    //final double driveOutput =
+    //    m_drivePIDController.calculate(m_driveMotor.getSelectedSensorVelocity(), state.speedMetersPerSecond);
 
+    double driveVelocity = state.speedMetersPerSecond / (2*Math.PI*kEffectiveRadius) * kDriveResolution * 0.1;
+    
     //final double driveFeedforward = m_driveFeedforward.calculate(state.speedMetersPerSecond);
+    //if (name == "Front Right") 
+      //  System.out.println(name + " " + state.angle.getRadians() + " " + turnAngle);
+    double setPosition = state.angle.getRadians()/(2*Math.PI) * kTurnResolution;
+    double revs = Math.round(currentTurnPosition / kTurnResolution);
+    setPosition += revs * kTurnResolution;
+    while (setPosition > currentTurnPosition + kTurnResolution / 2) setPosition -= kTurnResolution;
+    while (setPosition < currentTurnPosition - kTurnResolution / 2) setPosition += kTurnResolution;
 
     // Calculate the turning motor output from the turning PID controller.
-    final double turnOutput =
-        m_turningPIDController.calculate(m_turningMotor.getSelectedSensorPosition(), state.angle.getRadians()); 
+    // final double turnOutput =
+    //     m_turningPIDController.calculate(m_turningMotor.getSelectedSensorPosition(), state.angle.getRadians()); 
 
     //final double turnFeedforward =
     //    m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
 
-    m_driveMotor.set(TalonFXControlMode.Velocity, driveOutput);
-
-    m_turningMotor.set(TalonFXControlMode.Position, turnOutput);
+    //if (!driveDisabled) 
+    m_driveMotor.set(TalonFXControlMode.Velocity, driveVelocity);
+    m_turningMotor.set(TalonFXControlMode.Position, setPosition);
+    //System.out.println(setPosition + " " + currentTurnPosition);
+    //m_turningMotor.set(TalonFXControlMode.Position, turnOutput);
   }
 }

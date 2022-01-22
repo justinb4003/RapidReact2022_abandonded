@@ -4,43 +4,48 @@
 
 package frc.robot;
 
+import com.kauailabs.navx.frc.AHRS;
+
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.wpilibj.AnalogGyro;
+import edu.wpi.first.wpilibj.SerialPort.Port;
 
 /** Represents a swerve drive style drivetrain. */
 public class Drivetrain {
   // TODO: Robot constants will need to be tuned
-  public static final double kMaxSpeed = 4.758; // meters per second
+  public static final double kMaxSpeed = 15.6 * 12;  // inches per second  4.758; // meters per second
   public static final double kMaxAngularSpeed = Math.PI; // 1/2 rotation per second
 
   // TODO: Location of wheels from center of robot need to be defined
-  private final Translation2d m_frontLeftLocation = new Translation2d(0.381, 0.381);
-  private final Translation2d m_frontRightLocation = new Translation2d(0.381, -0.381);
-  private final Translation2d m_backLeftLocation = new Translation2d(-0.381, 0.381);
-  private final Translation2d m_backRightLocation = new Translation2d(-0.381, -0.381);
+  private final static double halfWheelBase = 23.25/2.0;
+  private final static double halfTrackWidth = 21.875/2.0;
+  private final Translation2d m_frontLeftLocation = new Translation2d(halfWheelBase, halfTrackWidth);
+  private final Translation2d m_frontRightLocation = new Translation2d(halfWheelBase, -halfTrackWidth);
+  private final Translation2d m_backLeftLocation = new Translation2d(-halfWheelBase, halfTrackWidth);
+  private final Translation2d m_backRightLocation = new Translation2d(-halfWheelBase, -halfWheelBase);
 
   // TOD: CAN Bus IDs need to be defined to match physical robot
   // ... and be placed in a nice central location like 'RobotMap'
-  private final SwerveModule m_frontLeft = new SwerveModule(10, 20);
-  private final SwerveModule m_frontRight = new SwerveModule(11, 21);
-  private final SwerveModule m_backLeft = new SwerveModule(12, 22);
-  private final SwerveModule m_backRight = new SwerveModule(13, 23);
+  private final SwerveModule m_frontLeft = new SwerveModule(10, 20, "Front Left", true);
+  private final SwerveModule m_backLeft = new SwerveModule(11, 21, "Back Left", true);
+  private final SwerveModule m_backRight = new SwerveModule(12, 22, "Back Right", true);
+  private final SwerveModule m_frontRight = new SwerveModule(13, 23, "Front Right", true);
 
   // TODO: Will need to replace the gyro here with the navX system
-  private final AnalogGyro m_gyro = new AnalogGyro(0);
+  private final AHRS gyro = new AHRS(Port.kMXP);
 
   private final SwerveDriveKinematics m_kinematics =
       new SwerveDriveKinematics(
           m_frontLeftLocation, m_frontRightLocation, m_backLeftLocation, m_backRightLocation);
 
   private final SwerveDriveOdometry m_odometry =
-      new SwerveDriveOdometry(m_kinematics, m_gyro.getRotation2d());
+      new SwerveDriveOdometry(m_kinematics, gyro.getRotation2d());
 
   public Drivetrain() {
-    m_gyro.reset();
+    gyro.reset();
   }
 
   /**
@@ -56,7 +61,7 @@ public class Drivetrain {
     var swerveModuleStates =
         m_kinematics.toSwerveModuleStates(
             fieldRelative
-                ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, m_gyro.getRotation2d())
+                ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, gyro.getRotation2d())
                 : new ChassisSpeeds(xSpeed, ySpeed, rot));
     SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, kMaxSpeed);
     m_frontLeft.setDesiredState(swerveModuleStates[0]);
@@ -68,7 +73,7 @@ public class Drivetrain {
   /** Updates the field relative position of the robot. */
   public void updateOdometry() {
     m_odometry.update(
-        m_gyro.getRotation2d(),
+        gyro.getRotation2d(),
         m_frontLeft.getState(),
         m_frontRight.getState(),
         m_backLeft.getState(),
