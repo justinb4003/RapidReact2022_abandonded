@@ -12,6 +12,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.SerialPort.Port;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /** Represents a swerve drive style drivetrain. */
 public class Drivetrain {
@@ -29,10 +30,10 @@ public class Drivetrain {
 
   // TOD: CAN Bus IDs need to be defined to match physical robot
   // ... and be placed in a nice central location like 'RobotMap'
-  private final SwerveModule m_frontLeft = new SwerveModule(10, 20, "Front Left", true);
-  private final SwerveModule m_backLeft = new SwerveModule(11, 21, "Back Left", true);
-  private final SwerveModule m_backRight = new SwerveModule(12, 22, "Back Right", true);
-  private final SwerveModule m_frontRight = new SwerveModule(13, 23, "Front Right", true);
+  private final SwerveModule m_frontLeft = new SwerveModule(10, 20, 0, "Front Left", true);
+  private final SwerveModule m_backLeft = new SwerveModule(11, 21, 1, "Back Left", true);
+  private final SwerveModule m_backRight = new SwerveModule(12, 22, 2, "Back Right", true);
+  private final SwerveModule m_frontRight = new SwerveModule(13, 23, 3, "Front Right", true);
 
   // TODO: Will need to replace the gyro here with the navX system
   private final AHRS gyro = new AHRS(Port.kMXP);
@@ -78,5 +79,25 @@ public class Drivetrain {
         m_frontRight.getState(),
         m_backLeft.getState(),
         m_backRight.getState());
+  }
+
+  public void resetTurnEncoders() {
+    m_frontLeft.resetTurnEncoder();
+    m_backLeft.resetTurnEncoder();
+    m_backRight.resetTurnEncoder();
+    m_frontRight.resetTurnEncoder();
+  }
+
+  public void periodic() {
+    //resetTurnEncoders();
+    /*
+    System.out.println(m_frontLeft.getTurnPosition() + " " + m_frontRight.getTurnPosition() + " " + 
+    m_backLeft.getTurnPosition() + " " + m_backRight.getTurnPosition());
+    */
+    System.out.println(gyro.getRotation2d());
+    SmartDashboard.putNumber("Back Right", m_backRight.getTurnPosition());
+    SmartDashboard.putNumber("Back Left", m_backLeft.getTurnPosition());
+    SmartDashboard.putNumber("Front Right", m_frontRight.getTurnPosition());
+    SmartDashboard.putNumber("Front Left", m_frontLeft.getTurnPosition());
   }
 }

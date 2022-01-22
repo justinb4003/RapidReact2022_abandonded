@@ -18,7 +18,7 @@ public class Robot extends TimedRobot {
   private final SlewRateLimiter m_yspeedLimiter = new SlewRateLimiter(3);
   private final SlewRateLimiter m_rotLimiter = new SlewRateLimiter(3);
 
-  
+
   @Override
   public void autonomousPeriodic() {
     driveWithJoystick(false);
@@ -28,6 +28,18 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     driveWithJoystick(true);
+    m_swerve.periodic();
+  }
+
+  @Override
+  public void robotInit() {
+    m_swerve.resetTurnEncoders();
+  }
+
+  public void disabledPeriodic() {
+    //m_swerve.resetTunrEncoders();
+    //System.out.println("encoders reset");
+    m_swerve.periodic();
   }
 
   private void driveWithJoystick(boolean fieldRelative) {

@@ -1,4 +1,4 @@
-// Copyright (c) FIRST and other WPILib contributors.
+// Copyright (c) FIRST and other WPILib contrinutors.
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
@@ -11,6 +11,8 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.wpilibj.AnalogEncoder;
+import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
@@ -36,6 +38,8 @@ public class SwerveModule {
 
   private final TalonFX m_driveMotor;
   private final TalonFX m_turningMotor;
+  private AnalogInput m_turnEncoder;
+  private int m_encoderOffset = 0;
 
   //private final Encoder m_driveEncoder;
   //private final Encoder m_turningEncoder;
@@ -69,11 +73,11 @@ public class SwerveModule {
 
    boolean driveDisabled = false;
    String name;
-   public SwerveModule(int driveMotorID, int turningMotorID, String name, boolean driveDisabled) {
-     this(driveMotorID, turningMotorID, name);
+   public SwerveModule(int driveMotorID, int turningMotorID, int turnEncoderChannel, String name, boolean driveDisabled) {
+     this(driveMotorID, turningMotorID, turnEncoderChannel, name);
      this.driveDisabled = driveDisabled;
    }
-  public SwerveModule(int driveMotorID, int turningMotorID, String name) {
+  public SwerveModule(int driveMotorID, int turningMotorID, int turnEncoderChannel, String name) {
     // TODO: The controllers won't be SparkMax, this needs to change.
     m_driveMotor = new TalonFX(driveMotorID);
     m_turningMotor = new TalonFX(turningMotorID);
@@ -85,6 +89,8 @@ public class SwerveModule {
     m_turningMotor.config_kP(0, 0.1);
     m_turningMotor.config_kD(0, 0.002);
     m_turningMotor.setInverted(TalonFXInvertType.Clockwise);
+
+    m_turnEncoder = new AnalogInput(turnEncoderChannel);
     
     this.name = name;
     // TODO: Much like the motor controllers the Encoders are going to have to change
@@ -128,6 +134,8 @@ public class SwerveModule {
     SwerveModuleState state =
         SwerveModuleState.optimize(desiredState, new Rotation2d(turnAngle));
 
+    
+
     // Calculate the drive output from the drive PID controller.
     //final double driveOutput =
     //    m_drivePIDController.calculate(m_driveMotor.getSelectedSensorVelocity(), state.speedMetersPerSecond);
@@ -155,5 +163,17 @@ public class SwerveModule {
     m_turningMotor.set(TalonFXControlMode.Position, setPosition);
     //System.out.println(setPosition + " " + currentTurnPosition);
     //m_turningMotor.set(TalonFXControlMode.Position, turnOutput);
+  }
+
+  public void resetTurnEncoder() {
+    m_encoderOffset = m_turnEncoder.getValue();
+  }
+
+  public double getTurnPosition() {
+    int ticks = m_turnEncoder.getValue() - m_encoderOffset;
+    if (ticks < 0) {
+      ticks = 4096 + ticks;
+    }
+    return ticks / 360.0;
   }
 }
