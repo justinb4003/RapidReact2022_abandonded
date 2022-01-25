@@ -30,7 +30,7 @@ public class SwerveModule {
   private static final double kDriveGearRatio = 7.131;
   private static final double kEffectiveRadius = kWheelRadius / kDriveGearRatio;
   private static final int kDriveResolution =  2048;
-  private static final int kTurnResolution = 31185;
+  private static final int kTurnResolution = 4096;
 
   private static final double kModuleMaxAngularVelocity = Drivetrain.kMaxAngularSpeed;
   private static final double kModuleMaxAngularAcceleration =
@@ -46,7 +46,7 @@ public class SwerveModule {
 
   // Gains are for example purposes only - must be determined for your own robot!
   // TODO: Need to tune the PID controller here, a P of 1 is usually quite high.
-  private final PIDController m_drivePIDController = new PIDController(1, 0, 0);
+  private final PIDController m_turnPIDController = new PIDController(1/1000.0, 0, 0);
 
   // Gains are for example purposes only - must be determined for your own robot!
   // TODO: Need to tune the PID controller here, a P of 1 is usually quite high.
@@ -73,17 +73,17 @@ public class SwerveModule {
 
    boolean driveDisabled = false;
    String name;
-   public SwerveModule(int driveMotorID, int turningMotorID, int turnEncoderChannel, String name, boolean driveDisabled) {
-     this(driveMotorID, turningMotorID, turnEncoderChannel, name);
+   public SwerveModule(int driveMotorID, int turningMotorID, int turnEncoderChannel, int turnEncoderoffset, String name, boolean driveDisabled) {
+     this(driveMotorID, turningMotorID, turnEncoderChannel, turnEncoderoffset,  name);
      this.driveDisabled = driveDisabled;
    }
-  public SwerveModule(int driveMotorID, int turningMotorID, int turnEncoderChannel, String name) {
+  public SwerveModule(int driveMotorID, int turningMotorID, int turnEncoderChannel, int turnEncoderoffset, String name) {
     // TODO: The controllers won't be SparkMax, this needs to change.
     m_driveMotor = new TalonFX(driveMotorID);
     m_turningMotor = new TalonFX(turningMotorID);
 
     m_driveMotor.setNeutralMode(NeutralMode.Coast);
-
+    m_encoderOffset = turnEncoderoffset;
     m_driveMotor.config_kF(0, 0.0465);
     m_driveMotor.config_kP(0, 0.0);
     m_turningMotor.config_kP(0, 0.1);
@@ -111,15 +111,20 @@ public class SwerveModule {
     // to be continuous.
     m_turningPIDController.enableContinuousInput(-Math.PI, Math.PI);
   }
-
+    public double getDriveVelocity(){
+      return m_driveMotor.getSelectedSensorVelocity() * 10/kDriveResolution * 2 * Math.PI * kEffectiveRadius;
+    }
+    public double getTurnPositionInradians(){
+      return getTurnPosition()/kTurnResolution * 2 * Math.PI;
+    }
   /**
    * Returns the current state of the module.
    *
    * @return The current state of the module.
    */
   public SwerveModuleState getState() {
-    return new SwerveModuleState(m_driveMotor.getSelectedSensorVelocity(), 
-    new Rotation2d(m_turningMotor.getSelectedSensorPosition()));
+    return new SwerveModuleState(getDriveVelocity(),
+    new Rotation2d(getTurnPositionInradians()));
   }
 
   /**
@@ -129,7 +134,7 @@ public class SwerveModule {
    */
   public void setDesiredState(SwerveModuleState desiredState) {
     // Optimize the reference state to avoid spinning further than 90 degrees
-    double currentTurnPosition = m_turningMotor.getSelectedSensorPosition();
+    double currentTurnPosition = getTurnPosition();
     double turnAngle = 2*Math.PI/kTurnResolution * currentTurnPosition;
     SwerveModuleState state =
         SwerveModuleState.optimize(desiredState, new Rotation2d(turnAngle));
@@ -160,7 +165,9 @@ public class SwerveModule {
 
     //if (!driveDisabled) 
     m_driveMotor.set(TalonFXControlMode.Velocity, driveVelocity);
-    m_turningMotor.set(TalonFXControlMode.Position, setPosition);
+    m_turnPIDController.setSetpoint(setPosition);
+    double turnPower = m_turnPIDController.calculate(currentTurnPosition);
+    m_turningMotor.set(TalonFXControlMode.PercentOutput, turnPower);
     //System.out.println(setPosition + " " + currentTurnPosition);
     //m_turningMotor.set(TalonFXControlMode.Position, turnOutput);
   }
@@ -170,10 +177,6 @@ public class SwerveModule {
   }
 
   public double getTurnPosition() {
-    int ticks = m_turnEncoder.getValue() - m_encoderOffset;
-    if (ticks < 0) {
-      ticks = 4096 + ticks;
-    }
-    return ticks / 360.0;
+    return m_turnEncoder.getValue()-m_encoderOffset;
   }
 }

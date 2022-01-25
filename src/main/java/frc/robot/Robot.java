@@ -29,17 +29,19 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() {
     driveWithJoystick(true);
     m_swerve.periodic();
+    m_swerve.updateOdometry();
+    System.out.println(m_swerve.getOdometry().getPoseMeters());
   }
 
   @Override
   public void robotInit() {
-    m_swerve.resetTurnEncoders();
+    //m_swerve.resetTurnEncoders();
   }
 
   public void disabledPeriodic() {
     //m_swerve.resetTunrEncoders();
     //System.out.println("encoders reset");
-    m_swerve.periodic();
+    //m_swerve.periodic();
   }
 
   private void driveWithJoystick(boolean fieldRelative) {
