@@ -179,4 +179,9 @@ public class SwerveModule {
   public double getTurnPosition() {
     return m_turnEncoder.getValue()-m_encoderOffset;
   }
+
+  public void stopDriveMotor() {
+    m_driveMotor.set(TalonFXControlMode.PercentOutput, 0);
+    m_turningMotor.set(TalonFXControlMode.PercentOutput, 0);
+  }
 }

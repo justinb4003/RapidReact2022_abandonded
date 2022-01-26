@@ -12,12 +12,12 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
-import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.SerialPort.Port;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 /** Represents a swerve drive style drivetrain. */
-public class Drivetrain {
+public class Drivetrain extends SubsystemBase {
   // TODO: Robot constants will need to be tuned
   public static final double kMaxSpeed = 15.6 * 12;  // inches per second  4.758; // meters per second
   public static final double kMaxAngularSpeed = 2*Math.PI; // 1 rotation per second
@@ -106,5 +106,12 @@ public class Drivetrain {
     SmartDashboard.putNumber("Back Left", m_backLeft.getTurnPosition());
     SmartDashboard.putNumber("Front Right", m_frontRight.getTurnPosition());
     SmartDashboard.putNumber("Front Left", m_frontLeft.getTurnPosition());
+  }
+
+  public void stopDriveMotor () {
+    m_backRight.stopDriveMotor();
+    m_backLeft.stopDriveMotor();
+    m_frontRight.stopDriveMotor();
+    m_frontLeft.stopDriveMotor();
   }
 }

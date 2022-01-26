@@ -8,20 +8,30 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.commands.DriveToPose;
 
 public class Robot extends TimedRobot {
   private final XboxController m_controller = new XboxController(0);
-  private final Drivetrain m_swerve = new Drivetrain();
+  public static Drivetrain m_swerve = new Drivetrain();
 
   // Slew rate limiters to make joystick inputs more gentle; 1/3 sec from 0 to 1.
   private final SlewRateLimiter m_xspeedLimiter = new SlewRateLimiter(3);
   private final SlewRateLimiter m_yspeedLimiter = new SlewRateLimiter(3);
   private final SlewRateLimiter m_rotLimiter = new SlewRateLimiter(3);
-
+  Command autonomousCommand = new DriveToPose(100, -20, 0);
+  
+  @Override
+  public void autonomousInit() {
+    autonomousCommand.schedule();
+  }
 
   @Override
   public void autonomousPeriodic() {
-    driveWithJoystick(false);
+    //driveWithJoystick(false);
+    //System.out.println("in autonomousPeriodic");
     m_swerve.updateOdometry();
   }
 
@@ -38,6 +48,9 @@ public class Robot extends TimedRobot {
     //m_swerve.resetTurnEncoders();
   }
 
+  public void robotPeriodic() {
+    CommandScheduler.getInstance().run();
+  }
   public void disabledPeriodic() {
     //m_swerve.resetTunrEncoders();
     //System.out.println("encoders reset");
