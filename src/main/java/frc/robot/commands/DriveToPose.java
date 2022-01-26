@@ -17,39 +17,64 @@ public class DriveToPose extends CommandBase {
   double distance;
   double lastDistance = Double.POSITIVE_INFINITY;
   boolean finished = false;
-  public DriveToPose(double x, double y, double angle) {
+  double maxPower;
+  double driveFactor = 0;
+  double rotFactor = 0;
+  double rampDistance = 30;
+  public DriveToPose(double x, double y, double angle, double maxPower) {
     // Use addRequirements() here to declare subsystem dependencies.
     addRequirements(Robot.m_swerve);
     targetX = x;
     targetY = y;
     targetAngle = angle;
+    this.maxPower = maxPower;
   }
 
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    System.out.println("command Init"); 
+    //System.out.println("command Init"); 
    }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
+    // determine distance and heading
+
     Pose2d currentPose = Robot.m_swerve.getOdometry().getPoseMeters();
     double deltax = targetX - currentPose.getX();
     double deltay = targetY - currentPose.getY();
     distance = Math.sqrt(deltax * deltax + deltay * deltay);
+
+    // determine rotation
+
     Rotation2d poseAngle = currentPose.getRotation();
     double deltaAngle = targetAngle - poseAngle.getDegrees();
     while (deltaAngle < -180) deltaAngle = deltaAngle + 360;
     while (deltaAngle > 180) deltaAngle = deltaAngle - 360;
-    double ySpeed = deltay / distance * 0.5 * Drivetrain.kMaxSpeed;
-    double xSpeed = deltax / distance * 0.5 * Drivetrain.kMaxSpeed;
-    double rotationSpeed = deltaAngle / 180 * Drivetrain.kMaxAngularSpeed;
+
+    // set up power readings
+
+    double finalRamp = Math.min(1, distance/rampDistance);
+    double drivePower = maxPower * driveFactor * finalRamp;
+    double ySpeed = deltay / distance * drivePower * Drivetrain.kMaxSpeed;
+    double xSpeed = deltax / distance * drivePower * Drivetrain.kMaxSpeed;
+    double rotationSpeed = deltaAngle / 180 * Drivetrain.kMaxAngularSpeed * rotFactor;
+
+    // set drive power
     System.out.println(xSpeed + " " + ySpeed + " " + rotationSpeed);
     System.out.println(distance + " " + lastDistance);
-    Robot.m_swerve.drive(xSpeed, ySpeed, 0, true);
-    finished = distance > lastDistance;
+    Robot.m_swerve.drive(xSpeed, ySpeed, rotationSpeed, true);
+
+    // check to see if we're finished
+    finished = distance < 20 && distance > lastDistance;
     lastDistance = distance;
+
+    // update ramp up 
+    driveFactor += 0.1;
+    rotFactor += 0.1;
+    if (driveFactor > 1) driveFactor = 1;
+    if (rotFactor > 1) rotFactor = 1;
   }
 
   // Called once the command ends or is interrupted.
